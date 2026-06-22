@@ -60,7 +60,7 @@ async function verwerkIntake(payload) {
             tekst__1:       naam,           // Contactpersoon — pas kolom-ID aan!
             lange_tekst__1: beschrijving,   // Bedrijfsbeschrijving — pas kolom-ID aan!
             lange_tekst__2: samenvatting,   // Volledige intake samenvatting — pas kolom-ID aan!
-            status__1:      { label: 'Nieuw' },
+            status__1:      { label: 'Ermee bezig' },
             datum__1:       { date: datum }
         };
 
