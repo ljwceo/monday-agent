@@ -4,11 +4,17 @@ const { zoekBedrijf, maakNieuwItem, maakSubitem, updateItem } = require('./monda
 
 // === ECHTE KOLOM-ID'S VAN HET MONDAY BOARD ===
 const KOLOM = {
-    bedrijfsbeschrijving: 'long_text_mm4jq87p',
-    intakeSamenvatting:   'long_text_mm4ja634',
-    status:               'color_mm4jxbts',
-    datum:                'date_mm4jh814'
+    contactpersoon: 'text_mm3rw5et',      // Conactpersoon
+    // emailTelefoon: 'text_mm3rbtt9',    // E-mail/telefoon — nog niet gevraagd in de flow, bewust leeg voor demo
+    // adviesgebied:  'dropdown_mm3rzv70',// Adviesgebied — nog niet gevraagd in de flow, bewust leeg voor demo
+    samenvatting: 'long_text_mm3rfda5',   // Samenvatting hulpvraag
+    status:       'color_mm3re3ac',       // Status
+    datum:        'date_mm3rb2kx'         // Datum intake
 };
+
+// Nieuw-item krijgt deze status bij aanmaak — MOET exact overeenkomen met een
+// bestaand label in de "Status" kolom in Monday (hoofdlettergevoelig!)
+const STATUS_NIEUW = 'nieuw';
 
 // Haal een specifiek antwoord op uit de chatgeschiedenis van Agent 1
 function haalAntwoord(chatHistory, zoekterm) {
@@ -40,9 +46,13 @@ async function verwerkIntake(payload) {
     const naam         = haalAntwoord(chatHistory, 'voor- en achternaam');
     const bedrijfsnaam = haalAntwoord(chatHistory, 'naam van je bedrijf');
     const beschrijving = haalAntwoord(chatHistory, 'doet je bedrijf');
-    const samenvatting = maakSamenvatting(themeHistories || {});
+    const themaSamenvatting = maakSamenvatting(themeHistories || {});
     const datum        = new Date(finishedAt || Date.now()).toISOString().split('T')[0];
     const datumLeesbaar = new Date(finishedAt || Date.now()).toLocaleDateString('nl-NL');
+
+    // Bedrijfsbeschrijving heeft geen eigen kolom op dit board -> vooraan
+    // in de samenvatting-tekst zetten zodat de info niet verloren gaat
+    const samenvatting = `Wat doet het bedrijf: ${beschrijving}\n\n${themaSamenvatting}`;
 
     // Valideer dat de minimale gegevens aanwezig zijn
     if (!bedrijfsnaam) {
@@ -63,14 +73,11 @@ async function verwerkIntake(payload) {
         // Nieuw bedrijf → maak een nieuw item aan
         console.log(`✨ Nieuw bedrijf — item aanmaken in Monday...`);
 
-        // Zet contactpersoon bovenaan de samenvatting zodat het zichtbaar is
-        const volledigeSamenvatting = `Contactpersoon: ${naam}\n\n${samenvatting}`;
-
         const kolomWaarden = {
-            [KOLOM.bedrijfsbeschrijving]: { text: beschrijving },
-            [KOLOM.intakeSamenvatting]:   { text: volledigeSamenvatting },
-            [KOLOM.status]:               { label: 'Ermee bezig' },
-            [KOLOM.datum]:                { date: datum }
+            [KOLOM.contactpersoon]: { text: naam },
+            [KOLOM.samenvatting]:   { text: samenvatting },
+            [KOLOM.status]:         { label: STATUS_NIEUW },
+            [KOLOM.datum]:          { date: datum }
         };
 
         const item = await maakNieuwItem(bedrijfsnaam, kolomWaarden);
